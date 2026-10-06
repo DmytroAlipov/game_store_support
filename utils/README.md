@@ -1,10 +1,12 @@
-# Customer Request Handler
+## Customer Request Handler
+
+<img width="1714" height="655" alt="Request_Handler" src="https://github.com/user-attachments/assets/2849f8aa-945b-49cf-95f6-6b2ba62f47e9" />
 
 [`handle_customer_request.json`](./handle_customer_request.json) is a standalone
 n8n workflow that turns a customer message into a short support summary, sends
 the request to the support inbox, and records it in Google Sheets.
 
-## Flow
+### Flow
 
 1. Receives an HTTP `POST` request at the `customer-request` webhook.
 2. Uses OpenAI to summarize the message and relevant customer
@@ -17,7 +19,7 @@ The email includes the summary, customer name and email, original message, and
 serialized customer data. The sheet columns are `Name`, `Email`, `Message`,
 `Summary`, `User Data`, and `Created At`.
 
-## Setup
+### Setup
 
 1. Import the JSON file into n8n.
 2. Configure the OpenAI credential used by the AI node.
@@ -33,7 +35,7 @@ The exported workflow contains placeholder credential IDs. Select or create
 the appropriate credentials in your n8n instance; do not rely on the IDs from
 the export.
 
-## Request
+### Request
 
 Send JSON with a `message` and optional customer `user` object. Both fields can
 be nested under `body` (for example, when forwarded from another webhook) or
