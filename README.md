@@ -1,74 +1,23 @@
-# AI Game Store Support — n8n Workflow
+# game_store_support
 
-<img width="1714" height="655" alt="Game Store Support" src="https://github.com/user-attachments/assets/e837af97-8e57-469d-be4a-28d342837118" />
+AI-powered customer support workflows for an online game store, built with
+[n8n](https://n8n.io/). The workflows are provided as JSON exports and need to
+be imported into an n8n instance before use.
 
-An AI-powered customer support workflow for an online video game store, built with **n8n**, **OpenAI**, and **Elasticsearch**.
+## Workflows
 
-## What it does
+| Location | Purpose |
+| --- | --- |
+| [`main_workflow/`](./main_workflow/) | Main support assistant: accepts WhatsApp or webhook messages, checks requests for security risks, and uses AI agents and store data to prepare a response. See the [workflow documentation](./main_workflow/README.md). |
+| [`utils/`](./utils/) | Standalone customer-request handler: summarizes a request with OpenAI, emails it to support, and appends it to Google Sheets. See the [utility workflow documentation](./utils/README.md). |
 
-The workflow receives customer messages from **WhatsApp or a webhook**, checks them for security risks, identifies the relevant game, and generates a support response based on the store's actual data.
+## Getting started
 
-### Main flow
+1. Import the relevant workflow JSON file into n8n.
+2. Configure the credentials, API endpoints, and other environment-specific
+   values required by that workflow.
+3. Test the workflow in n8n, then activate it and use its production webhook
+   URL or configured messaging channel.
 
-1. **Receive message** — via WhatsApp or HTTP webhook.
-2. **Security Guard** — detects prompt injection, jailbreaks, malicious payloads, data-exfiltration attempts, and other unsafe requests.
-3. **Game catalog lookup** — loads the current game catalog and uses Elasticsearch for fuzzy game search when needed.
-4. **AI Orchestrator** — determines what the customer needs and delegates the task to specialized agents.
-5. **Game Specialist** — retrieves game details, known issues, fixes, and knowledge-base articles.
-6. **Policy Agent** — handles refunds, delivery, payments, region restrictions, and warranty questions.
-7. **Final response** — returns a concise answer based only on information provided by the connected APIs and tools.
-8. **Send response** — returns the result to the webhook or sends it back through WhatsApp.
-
-## Architecture
-
-```text
-WhatsApp / Webhook
-        │
-        ▼
-  Normalize Input
-        │
-        ▼
-  Security Guard
-        │
-   ┌────┴────┐
- Blocked    Safe
-   │          │
-   │          ▼
-   │    Game Catalog
-   │          │
-   │          ▼
-   │   AI Orchestrator
-   │      ┌───┴────┐
-   │      ▼        ▼
-   │ Game Specialist  Policy Agent
-   │      │        │
-   │      └───┬────┘
-   │          ▼
-   │     Final Reply
-   └──────────┤
-              ▼
-       Webhook / WhatsApp
-```
-
-## Key features
-
-* Multi-channel support: **WhatsApp + HTTP API**
-* AI-based security filtering
-* Multi-agent architecture
-* Elasticsearch fuzzy search
-* Game-specific technical support
-* Store policy lookup
-* Conversation memory
-* Fallback handling for API/agent errors
-* Responses grounded in external store data rather than model knowledge
-
-## Requirements
-
-* n8n
-* OpenAI API
-* WhatsApp Business API
-* Game Store API
-* Elasticsearch
-* Configured n8n credentials for the required services
-
-> The API URLs and credentials in the workflow are placeholders and must be configured for the target environment.
+Workflow exports may contain placeholder IDs or service settings. Replace
+these with values for your own n8n instance before activating a workflow.
