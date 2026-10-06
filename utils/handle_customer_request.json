@@ -1,0 +1,307 @@
+{
+  "name": "Customer Request → Email + Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "customer-request",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Customer Request Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -760,
+        0
+      ],
+      "webhookId": "customer-request-webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer message:\n{{ $json.body.message || $json.message || '' }}\n\nCustomer data:\n{{ JSON.stringify($json.body.user || $json.user || {}, null, 2) }}",
+        "options": {
+          "systemMessage": "You are a customer support request summarizer. Create a short, clear summary of the customer's request for a store support team.\n\nInclude:\n- what the customer wants or what problem they have;\n- important details from the message;\n- relevant customer information if it helps support the request.\n\nDo not invent any information. Use only the data provided in the input. Return only the summary text."
+        }
+      },
+      "id": "2",
+      "name": "AI Request Summary",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "3",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -520,
+        220
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "summary",
+              "name": "summary",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "={{ $('Customer Request Webhook').item.json.body.message || $('Customer Request Webhook').item.json.message || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "user_data",
+              "name": "user_data",
+              "value": "={{ JSON.stringify($('Customer Request Webhook').item.json.body.user || $('Customer Request Webhook').item.json.user || {}) }}",
+              "type": "string"
+            },
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ ($('Customer Request Webhook').item.json.body.user || $('Customer Request Webhook').item.json.user || {}).email || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "name",
+              "name": "name",
+              "value": "={{ ($('Customer Request Webhook').item.json.body.user || $('Customer Request Webhook').item.json.user || {}).name || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "Prepare Customer Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "support@example.com",
+        "subject": "=New customer request — {{ $json.name || 'Customer' }}",
+        "emailType": "text",
+        "message": "=New customer request\n\nSummary:\n{{ $json.summary }}\n\nCustomer:\n{{ $json.name || 'N/A' }}\nEmail: {{ $json.email || 'N/A' }}\n\nOriginal request:\n{{ $json.message }}\n\nCollected customer data:\n{{ $json.user_data }}"
+      },
+      "id": "5",
+      "name": "Send Support Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        20,
+        -120
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_SMTP_CREDENTIAL_ID",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Customers",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.name }}",
+            "Email": "={{ $json.email }}",
+            "Message": "={{ $json.message }}",
+            "Summary": "={{ $json.summary }}",
+            "User Data": "={{ $json.user_data }}",
+            "Created At": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "type": "string"
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "type": "string"
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "type": "string"
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "type": "string"
+            },
+            {
+              "id": "User Data",
+              "displayName": "User Data",
+              "type": "string"
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        20,
+        120
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_GOOGLE_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"summary\": $json.summary } }}",
+        "options": {}
+      },
+      "id": "7",
+      "name": "Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        280,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Customer Request Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Request Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Request Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Request Summary": {
+      "main": [
+        [
+          {
+            "node": "Prepare Customer Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Customer Data": {
+      "main": [
+        [
+          {
+            "node": "Send Support Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Support Email": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "customer-request-email-sheets-v1",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
